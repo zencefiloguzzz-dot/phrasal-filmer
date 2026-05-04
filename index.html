@@ -1,4 +1,3 @@
-Mükemmel! İşte kod:
 html<!DOCTYPE html>
 <html>
 <head>
@@ -8,7 +7,7 @@ html<!DOCTYPE html>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { width:100%; height:100%; overflow:hidden; background:#000; }
-
+    .ar-wrap { position:fixed; inset:0; width:100%; height:100%; }
     #loadingScreen {
       position:fixed; inset:0; background:#000; color:#fff;
       display:flex; flex-direction:column; align-items:center;
@@ -22,16 +21,12 @@ html<!DOCTYPE html>
       animation:spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform:rotate(360deg); } }
-    #loadingText { font-size:13px; opacity:0.7; }
-
     #videoBox {
       position:fixed; inset:0; background:#000;
-      display:none; align-items:center; justify-content:center;
-      z-index:500;
+      display:none; align-items:center; justify-content:center; z-index:500;
     }
     #videoBox.active { display:flex; }
     #videoBox video { width:100%; height:100%; object-fit:contain; }
-
     #closeBtn {
       position:fixed; top:16px; right:16px; z-index:501;
       background:rgba(0,0,0,0.6); color:#fff; border:none;
@@ -39,15 +34,13 @@ html<!DOCTYPE html>
       font-size:20px; cursor:pointer; display:none;
     }
     #closeBtn.active { display:block; }
-
-    .ar-wrap { position:fixed; inset:0; width:100%; height:100%; }
   </style>
 </head>
 <body>
 
 <div id="loadingScreen">
   <div class="spinner"></div>
-  <p id="loadingText">Hazırlanıyor... (0/3)</p>
+  <p id="loadingText" style="font-size:13px;opacity:0.7;">Hazırlanıyor... (0/3)</p>
 </div>
 
 <div id="videoBox">
@@ -55,10 +48,9 @@ html<!DOCTYPE html>
 </div>
 <button id="closeBtn" onclick="closeVideo()">✕</button>
 
-<!-- SAHNE 1: CUW -->
 <div class="ar-wrap">
 <a-scene id="scene_cuw"
-  mindar-image="imageTargetSrc: ./markers/cuw.mind; autoStart: true; uiLoading: false; uiScanning: false;"
+  mindar-image="imageTargetSrc: https://zencefiloguzzz-dot.github.io/phrasal-filmer/markers/cuw.mind; autoStart: true; uiLoading: false; uiScanning: false;"
   embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
   renderer="antialias: false; colorManagement: false;">
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -67,11 +59,10 @@ html<!DOCTYPE html>
 </div>
 
 <script>
-const BASE = './videolar/';
 const VIDEOS = {
-  cuw: BASE + 'cuw.mp4',
-  lft: BASE + 'lft.mp4',
-  roo: BASE + 'roo.mp4',
+  cuw: 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/cuw.mp4',
+  lft: 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/lft.mp4',
+  roo: 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/roo.mp4',
 };
 
 const loadingText = document.getElementById('loadingText');
@@ -87,23 +78,19 @@ let lostTimer = null;
 function onReady() {
   readyCount++;
   loadingText.textContent = 'Hazırlanıyor... (' + readyCount + '/3)';
-  if (readyCount >= 3) {
-    loadingScreen.classList.add('hidden');
-  }
+  if (readyCount >= 3) loadingScreen.classList.add('hidden');
 }
 
 function playVideo(key) {
   if (lostTimer) { clearTimeout(lostTimer); lostTimer = null; }
   if (currentKey === key) return;
   currentKey = key;
-
   mainVid.src = VIDEOS[key];
   mainVid.currentTime = 0;
   mainVid.muted = false;
   mainVid.volume = 1;
   videoBox.classList.add('active');
   closeBtn.classList.add('active');
-
   mainVid.play().catch(() => {
     mainVid.muted = true;
     mainVid.play().catch(e => console.error(e));
@@ -113,24 +100,20 @@ function playVideo(key) {
 function stopVideo(key) {
   lostTimer = setTimeout(() => {
     if (currentKey !== key) return;
-    mainVid.pause();
-    mainVid.src = '';
+    mainVid.pause(); mainVid.src = '';
     videoBox.classList.remove('active');
     closeBtn.classList.remove('active');
-    currentKey = null;
-    lostTimer = null;
+    currentKey = null; lostTimer = null;
   }, 1500);
 }
 
 function closeVideo() {
-  mainVid.pause();
-  mainVid.src = '';
+  mainVid.pause(); mainVid.src = '';
   videoBox.classList.remove('active');
   closeBtn.classList.remove('active');
   currentKey = null;
 }
 
-// CUW sahnesi hazır olunca LFT ve ROO'yu ekle
 document.getElementById('scene_cuw').addEventListener('arReady', () => {
   onReady();
   document.getElementById('t_cuw').addEventListener('targetFound', () => playVideo('cuw'));
@@ -145,15 +128,13 @@ function addScene(key) {
   wrap.style.pointerEvents = 'none';
   wrap.innerHTML = `
     <a-scene id="scene_${key}"
-      mindar-image="imageTargetSrc: ./markers/${key}.mind; autoStart: true; uiLoading: false; uiScanning: false;"
+      mindar-image="imageTargetSrc: https://zencefiloguzzz-dot.github.io/phrasal-filmer/markers/${key}.mind; autoStart: true; uiLoading: false; uiScanning: false;"
       embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
-      renderer="antialias: false; colorManagement: false;"
-      style="width:100%;height:100%;">
+      renderer="antialias: false; colorManagement: false;" style="width:100%;height:100%;">
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-entity id="t_${key}" mindar-image-target="targetIndex: 0"></a-entity>
     </a-scene>`;
   document.body.appendChild(wrap);
-
   document.getElementById('scene_' + key).addEventListener('arReady', () => {
     onReady();
     document.getElementById('t_' + key).addEventListener('targetFound', () => playVideo(key));
@@ -163,7 +144,6 @@ function addScene(key) {
   document.getElementById('scene_' + key).addEventListener('arError', () => onReady());
 }
 
-// Ses kilidi
 document.body.addEventListener('touchstart', function unlock() {
   mainVid.muted = true;
   mainVid.play().then(() => { mainVid.pause(); mainVid.muted = false; }).catch(() => {});
@@ -173,6 +153,5 @@ window.addEventListener('orientationchange', () => {
   setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
 });
 </script>
-
 </body>
 </html>
