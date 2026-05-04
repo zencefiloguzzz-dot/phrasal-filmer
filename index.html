@@ -8,145 +8,94 @@ html<!DOCTYPE html>
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { width:100%; height:100%; overflow:hidden; background:#000; }
     .ar-wrap { position:fixed; inset:0; width:100%; height:100%; }
-    #loadingScreen {
-      position:fixed; inset:0; background:#000; color:#fff;
-      display:flex; flex-direction:column; align-items:center;
-      justify-content:center; z-index:9999; font-family:sans-serif; gap:12px;
-    }
-    #loadingScreen.hidden { display:none; }
-    .spinner {
-      width:44px; height:44px;
-      border:4px solid rgba(255,255,255,0.2);
-      border-top-color:#fff; border-radius:50%;
-      animation:spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    #videoBox {
-      position:fixed; inset:0; background:#000;
-      display:none; align-items:center; justify-content:center; z-index:500;
-    }
-    #videoBox.active { display:flex; }
-    #videoBox video { width:100%; height:100%; object-fit:cover; }
-    #closeBtn {
-      position:fixed; top:16px; right:16px; z-index:501;
-      background:rgba(0,0,0,0.6); color:#fff; border:none;
-      border-radius:50%; width:44px; height:44px;
-      font-size:20px; cursor:pointer; display:none;
-    }
-    #closeBtn.active { display:block; }
   </style>
 </head>
 <body>
-
-<div id="loadingScreen">
-  <div class="spinner"></div>
-  <p id="loadingText" style="font-size:13px;opacity:0.7;">Hazırlanıyor... (0/3)</p>
-</div>
-
-<div id="videoBox">
-  <video id="mainVid" playsinline webkit-playsinline></video>
-</div>
-<button id="closeBtn" onclick="closeVideo()">✕</button>
 
 <div class="ar-wrap">
 <a-scene id="scene_cuw"
   mindar-image="imageTargetSrc: https://zencefiloguzzz-dot.github.io/phrasal-filmer/markers/cuw.mind; autoStart: true; uiLoading: false; uiScanning: false;"
   embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
   renderer="antialias: false; colorManagement: false;">
+  <a-assets>
+    <video id="vid_cuw"
+      src="https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/cuw.mp4.mp4"
+      playsinline webkit-playsinline preload="auto"></video>
+  </a-assets>
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-  <a-entity id="t_cuw" mindar-image-target="targetIndex: 0"></a-entity>
+  <a-entity id="t_cuw" mindar-image-target="targetIndex: 0">
+    <a-video id="plane_cuw" src="#vid_cuw"
+      position="0 0.4 0"
+      width="1.6" height="0.9"
+      visible="false"
+      material="side: double;">
+    </a-video>
+  </a-entity>
 </a-scene>
 </div>
 
 <script>
-const VIDEOS = {
-cuw: 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/cuw.mp4.mp4',
-lft: 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/lft.mp4.mp4',
-roo: 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/roo.mp4.mp4',
-};
+const vid_cuw = document.getElementById('vid_cuw');
+const plane_cuw = document.getElementById('plane_cuw');
 
-const loadingText = document.getElementById('loadingText');
-const loadingScreen = document.getElementById('loadingScreen');
-const videoBox = document.getElementById('videoBox');
-const closeBtn = document.getElementById('closeBtn');
-const mainVid = document.getElementById('mainVid');
-
-let readyCount = 0;
-let currentKey = null;
-let lostTimer = null;
-
-function onReady() {
-  readyCount++;
-  loadingText.textContent = 'Hazırlanıyor... (' + readyCount + '/3)';
-  if (readyCount >= 3) loadingScreen.classList.add('hidden');
+function playVideo(vid, plane) {
+  plane.setAttribute('visible', 'true');
+  vid.currentTime = 0;
+  vid.muted = false;
+  vid.play().catch(() => { vid.muted = true; vid.play(); });
 }
 
-function playVideo(key) {
-  if (lostTimer) { clearTimeout(lostTimer); lostTimer = null; }
-  if (currentKey === key) return;
-  currentKey = key;
-  mainVid.src = VIDEOS[key];
-  mainVid.currentTime = 0;
-  mainVid.muted = false;
-  mainVid.volume = 1;
-  videoBox.classList.add('active');
-  closeBtn.classList.add('active');
-  mainVid.play().catch(() => {
-    mainVid.muted = true;
-    mainVid.play().catch(e => console.error(e));
-  });
-}
-
-function stopVideo(key) {
-  lostTimer = setTimeout(() => {
-    if (currentKey !== key) return;
-    mainVid.pause(); mainVid.src = '';
-    videoBox.classList.remove('active');
-    closeBtn.classList.remove('active');
-    currentKey = null; lostTimer = null;
+function stopVideo(vid, plane) {
+  setTimeout(() => {
+    vid.pause(); vid.currentTime = 0;
+    plane.setAttribute('visible', 'false');
   }, 1500);
 }
 
-function closeVideo() {
-  mainVid.pause(); mainVid.src = '';
-  videoBox.classList.remove('active');
-  closeBtn.classList.remove('active');
-  currentKey = null;
-}
-
 document.getElementById('scene_cuw').addEventListener('arReady', () => {
-  onReady();
-  document.getElementById('t_cuw').addEventListener('targetFound', () => playVideo('cuw'));
-  document.getElementById('t_cuw').addEventListener('targetLost', () => stopVideo('cuw'));
+  document.getElementById('t_cuw').addEventListener('targetFound', () => playVideo(vid_cuw, plane_cuw));
+  document.getElementById('t_cuw').addEventListener('targetLost', () => stopVideo(vid_cuw, plane_cuw));
   setTimeout(() => addScene('lft'), 500);
 });
-document.getElementById('scene_cuw').addEventListener('arError', () => onReady());
 
 function addScene(key) {
   const wrap = document.createElement('div');
   wrap.className = 'ar-wrap';
   wrap.style.pointerEvents = 'none';
+  const mindUrl = 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/markers/' + key + '.mind';
+  const vidUrl = 'https://zencefiloguzzz-dot.github.io/phrasal-filmer/videolar/' + key + '.mp4.mp4';
   wrap.innerHTML = `
     <a-scene id="scene_${key}"
-      mindar-image="imageTargetSrc: https://zencefiloguzzz-dot.github.io/phrasal-filmer/markers/${key}.mind; autoStart: true; uiLoading: false; uiScanning: false;"
+      mindar-image="imageTargetSrc: ${mindUrl}; autoStart: true; uiLoading: false; uiScanning: false;"
       embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
       renderer="antialias: false; colorManagement: false;" style="width:100%;height:100%;">
+      <a-assets>
+        <video id="vid_${key}" src="${vidUrl}" playsinline webkit-playsinline preload="auto"></video>
+      </a-assets>
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-      <a-entity id="t_${key}" mindar-image-target="targetIndex: 0"></a-entity>
+      <a-entity id="t_${key}" mindar-image-target="targetIndex: 0">
+        <a-video id="plane_${key}" src="#vid_${key}"
+          position="0 0.4 0" width="1.6" height="0.9"
+          visible="false" material="side: double;">
+        </a-video>
+      </a-entity>
     </a-scene>`;
   document.body.appendChild(wrap);
+
   document.getElementById('scene_' + key).addEventListener('arReady', () => {
-    onReady();
-    document.getElementById('t_' + key).addEventListener('targetFound', () => playVideo(key));
-    document.getElementById('t_' + key).addEventListener('targetLost', () => stopVideo(key));
+    const vid = document.getElementById('vid_' + key);
+    const plane = document.getElementById('plane_' + key);
+    document.getElementById('t_' + key).addEventListener('targetFound', () => playVideo(vid, plane));
+    document.getElementById('t_' + key).addEventListener('targetLost', () => stopVideo(vid, plane));
     if (key === 'lft') setTimeout(() => addScene('roo'), 500);
   });
-  document.getElementById('scene_' + key).addEventListener('arError', () => onReady());
 }
 
 document.body.addEventListener('touchstart', function unlock() {
-  mainVid.muted = true;
-  mainVid.play().then(() => { mainVid.pause(); mainVid.muted = false; }).catch(() => {});
+  [vid_cuw].forEach(v => {
+    v.muted = true;
+    v.play().then(() => { v.pause(); v.muted = false; }).catch(() => {});
+  });
 }, { once: true });
 
 window.addEventListener('orientationchange', () => {
